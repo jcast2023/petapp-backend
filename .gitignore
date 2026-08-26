@@ -40,12 +40,6 @@ logs/
 application-local.properties
 application-dev.properties
 
-# ============================================
-# MAVEN
-# ============================================
-.mvn/
-mvnw
-mvnw.cmd
 
 # ============================================
 # OTROS
