@@ -51,7 +51,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         // Leer allowed origins desde variable de entorno
-        String allowedOrigins = EnvConfig.get("CORS_ALLOWED_ORIGINS", "http://localhost:4200");
+        String allowedOrigins = System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", "http://localhost:4200");
         configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
