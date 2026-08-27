@@ -19,9 +19,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Endpoint WebSocket. El cliente se conecta a: wss://tu-backend/ws
+        // Para Flutter (WebSocket puro)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*") // Permite cualquier origen (por ahora)
-                .withSockJS(); // Soporte para navegadores antiguos
+                .setAllowedOriginPatterns("*");
+
+// Para Angular (Web - SockJS)
+        registry.addEndpoint("/ws-sockjs")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }

@@ -15,6 +15,9 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -35,24 +38,38 @@ public class AuthController {
     }
 
     @PostMapping("/registro")
-    public ResponseEntity<AuthResponse> registrar(@Valid @RequestBody RegistroRequest request,
-                                                  HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> registrar(@Valid @RequestBody RegistroRequest request,
+                                                         HttpServletResponse response) {
         Usuario usuario = usuarioService.registrar(
                 request.getNombre(), request.getCorreo(), request.getContrasena());
 
-        establecerCookieJwt(usuario.getId(), usuario.getCorreo(), response);
-        AuthResponse respuesta = new AuthResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo());
-        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        String token = establecerCookieJwt(usuario.getId(), usuario.getCorreo(), response);
+
+        // Respuesta con token en el body para Flutter
+        Map<String, Object> body = new HashMap<>();
+        body.put("usuarioId", usuario.getId());
+        body.put("nombre", usuario.getNombre());
+        body.put("correo", usuario.getCorreo());
+        body.put("token", token);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(body);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
-                                              HttpServletResponse response) {
+    public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody LoginRequest request,
+                                                     HttpServletResponse response) {
         Usuario usuario = usuarioService.autenticar(request.getCorreo(), request.getContrasena());
 
-        establecerCookieJwt(usuario.getId(), usuario.getCorreo(), response);
-        AuthResponse respuesta = new AuthResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo());
-        return ResponseEntity.ok(respuesta);
+        String token = establecerCookieJwt(usuario.getId(), usuario.getCorreo(), response);
+
+        // Respuesta con token en el body para Flutter
+        Map<String, Object> body = new HashMap<>();
+        body.put("usuarioId", usuario.getId());
+        body.put("nombre", usuario.getNombre());
+        body.put("correo", usuario.getCorreo());
+        body.put("token", token);
+
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/me")
@@ -75,7 +92,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    private void establecerCookieJwt(Long usuarioId, String correo, HttpServletResponse response) {
+    private String establecerCookieJwt(Long usuarioId, String correo, HttpServletResponse response) {
         String token = jwtUtil.generarToken(usuarioId, correo);
 
         ResponseCookie cookie = ResponseCookie.from("jwt", token)
@@ -87,5 +104,6 @@ public class AuthController {
                 .build();
 
         response.addHeader("Set-Cookie", cookie.toString());
+        return token; // Devuelve el token para usarlo en el body
     }
 }
