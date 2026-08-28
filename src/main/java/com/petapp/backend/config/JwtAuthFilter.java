@@ -46,29 +46,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private String extraerToken(HttpServletRequest request) {
-        // 1. Primero intentar obtener del header Authorization
+        // 1. Zuerst aus dem Header Authorization
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
 
-        // 2. Si no está en el header, intentar desde la cookie
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
+        // 2. Wenn nicht im Header, dann aus der Cookie
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
                 if ("jwt".equals(cookie.getName())) {
                     return cookie.getValue();
-                }
-            }
-        }
-
-        // 3. O directamente desde der Header "Cookie"
-        String cookieHeader = request.getHeader("Cookie");
-        if (cookieHeader != null) {
-            for (String cookie : cookieHeader.split(";")) {
-                String[] parts = cookie.trim().split("=");
-                if (parts.length == 2 && "jwt".equals(parts[0])) {
-                    return parts[1];
                 }
             }
         }
