@@ -15,8 +15,8 @@ public class JwtUtil {
     private final long expiracionMs;
 
     public JwtUtil() {
-        this.secret = EnvConfig.get("JWT_SECRET", "miClaveSecretaSuperSeguraParaJWT2026");
-        this.expiracionMs = Long.parseLong(EnvConfig.get("JWT_EXPIRACION_MS", "86400000"));
+        this.secret = System.getenv().getOrDefault("JWT_SECRET", "miClaveSecretaSuperSeguraParaJWT2026");
+        this.expiracionMs = Long.parseLong(System.getenv().getOrDefault("JWT_EXPIRACION_MS", "86400000"));
     }
 
     private SecretKey getClave() {

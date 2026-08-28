@@ -2,6 +2,7 @@ package com.petapp.backend.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,17 +46,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private String extraerToken(HttpServletRequest request) {
-        // Primero intentar obtener del header Authorization
+        // 1. Primero intentar obtener del header Authorization
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
         }
 
-        // Si no está en el header, intentar desde la cookie
-        if (request.getCookies() != null) {
-            for (var cookie : request.getCookies()) {
+        // 2. Si no está en el header, intentar desde la cookie
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
                 if ("jwt".equals(cookie.getName())) {
                     return cookie.getValue();
+                }
+            }
+        }
+
+        // 3. O directamente desde der Header "Cookie"
+        String cookieHeader = request.getHeader("Cookie");
+        if (cookieHeader != null) {
+            for (String cookie : cookieHeader.split(";")) {
+                String[] parts = cookie.trim().split("=");
+                if (parts.length == 2 && "jwt".equals(parts[0])) {
+                    return parts[1];
                 }
             }
         }
