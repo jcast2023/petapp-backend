@@ -1,5 +1,6 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.PesoRequestDTO;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.model.Peso;
 import com.petapp.backend.repository.MascotaRepository;
@@ -26,7 +27,7 @@ public class PesoServiceImpl implements PesoService {
 
     @Override
     @Transactional
-    public Peso crear(Peso peso, Long mascotaId, Long propietarioId) {
+    public Peso crear(PesoRequestDTO request, Long mascotaId, Long propietarioId) {
         Mascota mascota = mascotaRepository.findById(mascotaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe una mascota con id " + mascotaId));
@@ -35,10 +36,11 @@ public class PesoServiceImpl implements PesoService {
             throw new RuntimeException("La mascota no pertenece al usuario autenticado");
         }
 
+        Peso peso = new Peso();
+        peso.setFecha(request.getFecha());
+        peso.setPesoKg(request.getPesoKg());
         peso.setMascota(mascota);
-        Peso guardado = pesoRepository.save(peso);
-        System.out.println("✅ Registro de peso guardado: " + guardado.getPesoKg() + " kg - Mascota: " + guardado.getMascota().getNombre());
-        return guardado;
+        return pesoRepository.save(peso);
     }
 
     @Override
@@ -57,35 +59,16 @@ public class PesoServiceImpl implements PesoService {
 
     @Override
     public List<Peso> listarPorPropietario(Long propietarioId) {
-        List<Peso> pesos = pesoRepository.findByPropietarioId(propietarioId);
-        System.out.println("📋 Registros de peso encontrados: " + pesos.size());
-        for (Peso p : pesos) {
-            System.out.println("  - " + p.getPesoKg() + " kg | Mascota: " +
-                    (p.getMascota() != null ? p.getMascota().getNombre() : "null"));
-        }
-        return pesos;
+        return pesoRepository.findByPropietarioId(propietarioId);
     }
 
     @Override
     @Transactional
-    public Peso actualizar(Long id, Peso datosActualizados, Long propietarioId) {
+    public Peso actualizar(Long id, PesoRequestDTO request, Long propietarioId) {
         Peso existente = obtenerPorIdYPropietario(id, propietarioId);
 
-        existente.setFecha(datosActualizados.getFecha());
-        existente.setPesoKg(datosActualizados.getPesoKg());
-
-        if (datosActualizados.getMascota() != null && datosActualizados.getMascota().getId() != null) {
-            Long nuevaMascotaId = datosActualizados.getMascota().getId();
-            Mascota mascota = mascotaRepository.findById(nuevaMascotaId)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "No existe una mascota con id " + nuevaMascotaId));
-
-            if (!mascota.getPropietario().getId().equals(propietarioId)) {
-                throw new RuntimeException("La mascota no pertenece al usuario autenticado");
-            }
-            existente.setMascota(mascota);
-        }
-
+        existente.setFecha(request.getFecha());
+        existente.setPesoKg(request.getPesoKg());
         return pesoRepository.save(existente);
     }
 

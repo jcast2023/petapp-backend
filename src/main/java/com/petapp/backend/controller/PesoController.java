@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.PesoRequestDTO;
+import com.petapp.backend.dto.PesoResponseDTO;
 import com.petapp.backend.model.Peso;
 import com.petapp.backend.service.PesoService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/pesos")
@@ -35,46 +38,41 @@ public class PesoController {
     }
 
     @PostMapping
-    public ResponseEntity<Peso> crear(@Valid @RequestBody Peso peso) {
+    public ResponseEntity<PesoResponseDTO> crear(@Valid @RequestBody PesoRequestDTO request,
+                                                 @RequestParam Long mascotaId) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🆕 Creando registro de peso para usuario: " + usuarioId);
-
-        Long mascotaId = peso.getMascota().getId();
-        System.out.println("🐾 Mascota ID: " + mascotaId);
-        System.out.println("⚖️ Peso: " + peso.getPesoKg() + " kg");
-
-        Peso creado = pesoService.crear(peso, mascotaId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+        Peso creado = pesoService.crear(request, mascotaId, usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new PesoResponseDTO(creado));
     }
 
     @GetMapping
-    public ResponseEntity<List<Peso>> listar() {
+    public ResponseEntity<List<PesoResponseDTO>> listar() {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("📋 Listando registros de peso para usuario: " + usuarioId);
-        List<Peso> lista = pesoService.listarPorPropietario(usuarioId);
-        System.out.println("📊 Registros encontrados: " + lista.size());
+        List<PesoResponseDTO> lista = pesoService.listarPorPropietario(usuarioId)
+                .stream()
+                .map(PesoResponseDTO::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Peso> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<PesoResponseDTO> obtenerPorId(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🔍 Obteniendo registro de peso ID: " + id);
-        return ResponseEntity.ok(pesoService.obtenerPorIdYPropietario(id, usuarioId));
+        Peso peso = pesoService.obtenerPorIdYPropietario(id, usuarioId);
+        return ResponseEntity.ok(new PesoResponseDTO(peso));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Peso> actualizar(@PathVariable Long id,
-                                           @Valid @RequestBody Peso datosActualizados) {
+    public ResponseEntity<PesoResponseDTO> actualizar(@PathVariable Long id,
+                                                      @Valid @RequestBody PesoRequestDTO request) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("✏️ Actualizando registro de peso ID: " + id);
-        return ResponseEntity.ok(pesoService.actualizar(id, datosActualizados, usuarioId));
+        Peso actualizado = pesoService.actualizar(id, request, usuarioId);
+        return ResponseEntity.ok(new PesoResponseDTO(actualizado));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🗑️ Eliminando registro de peso ID: " + id);
         pesoService.eliminar(id, usuarioId);
         return ResponseEntity.noContent().build();
     }
