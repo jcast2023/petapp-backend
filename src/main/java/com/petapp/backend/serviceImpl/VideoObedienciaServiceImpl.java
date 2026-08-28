@@ -50,6 +50,19 @@ public class VideoObedienciaServiceImpl implements VideoObedienciaService {
     }
 
     @Override
+    public VideoObediencia actualizar(Long id, VideoObedienciaRequestDTO request) {
+        VideoObediencia video = obtenerPorId(id);
+        video.setTitulo(request.getTitulo());
+        video.setDescripcion(request.getDescripcion());
+        video.setUrlVideo(request.getUrlVideo());
+        video.setComando(request.getComando());
+        video.setNivel(request.getNivel());
+        video.setDuracionSegundos(request.getDuracionSegundos());
+        video.setMiniaturaUrl(request.getMiniaturaUrl());
+        return videoObedienciaRepository.save(video);
+    }
+
+    @Override
     public void eliminar(Long id) {
         if (!videoObedienciaRepository.existsById(id)) {
             throw new RecursoNoEncontradoException("No existe un video con id " + id);

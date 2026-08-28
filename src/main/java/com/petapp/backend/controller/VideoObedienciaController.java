@@ -54,6 +54,13 @@ public class VideoObedienciaController {
         return ResponseEntity.ok(new VideoObedienciaResponseDTO(video));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<VideoObedienciaResponseDTO> actualizar(@PathVariable Long id,
+                                                                 @Valid @RequestBody VideoObedienciaRequestDTO request) {
+        VideoObediencia actualizado = videoObedienciaService.actualizar(id, request);
+        return ResponseEntity.ok(new VideoObedienciaResponseDTO(actualizado));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         videoObedienciaService.eliminar(id);

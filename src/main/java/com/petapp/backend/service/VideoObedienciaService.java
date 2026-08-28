@@ -9,5 +9,6 @@ public interface VideoObedienciaService {
     List<VideoObediencia> listarTodos();
     List<VideoObediencia> listarPorNivel(String nivel);
     VideoObediencia obtenerPorId(Long id);
+    VideoObediencia actualizar(Long id, VideoObedienciaRequestDTO request);
     void eliminar(Long id);
 }
