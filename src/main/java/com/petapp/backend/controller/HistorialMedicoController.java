@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.HistorialMedicoRequestDTO;
+import com.petapp.backend.dto.HistorialMedicoResponseDTO;
 import com.petapp.backend.model.HistorialMedico;
 import com.petapp.backend.service.HistorialMedicoService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/historial-medico")
@@ -35,46 +38,41 @@ public class HistorialMedicoController {
     }
 
     @PostMapping
-    public ResponseEntity<HistorialMedico> crear(@Valid @RequestBody HistorialMedico historialMedico) {
+    public ResponseEntity<HistorialMedicoResponseDTO> crear(@Valid @RequestBody HistorialMedicoRequestDTO request,
+                                                            @RequestParam Long mascotaId) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🆕 Creando historial médico para usuario: " + usuarioId);
-
-        Long mascotaId = historialMedico.getMascota().getId();
-        System.out.println("🐾 Mascota ID: " + mascotaId);
-        System.out.println("🏥 Motivo: " + historialMedico.getMotivoConsulta());
-
-        HistorialMedico creado = historialMedicoService.crear(historialMedico, mascotaId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+        HistorialMedico creado = historialMedicoService.crear(request, mascotaId, usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new HistorialMedicoResponseDTO(creado));
     }
 
     @GetMapping
-    public ResponseEntity<List<HistorialMedico>> listar() {
+    public ResponseEntity<List<HistorialMedicoResponseDTO>> listar() {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("📋 Listando historial médico para usuario: " + usuarioId);
-        List<HistorialMedico> lista = historialMedicoService.listarPorPropietario(usuarioId);
-        System.out.println("📊 Registros encontrados: " + lista.size());
+        List<HistorialMedicoResponseDTO> lista = historialMedicoService.listarPorPropietario(usuarioId)
+                .stream()
+                .map(HistorialMedicoResponseDTO::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<HistorialMedico> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<HistorialMedicoResponseDTO> obtenerPorId(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🔍 Obteniendo historial ID: " + id);
-        return ResponseEntity.ok(historialMedicoService.obtenerPorIdYPropietario(id, usuarioId));
+        HistorialMedico historial = historialMedicoService.obtenerPorIdYPropietario(id, usuarioId);
+        return ResponseEntity.ok(new HistorialMedicoResponseDTO(historial));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<HistorialMedico> actualizar(@PathVariable Long id,
-                                                      @Valid @RequestBody HistorialMedico datosActualizados) {
+    public ResponseEntity<HistorialMedicoResponseDTO> actualizar(@PathVariable Long id,
+                                                                 @Valid @RequestBody HistorialMedicoRequestDTO request) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("✏️ Actualizando historial ID: " + id);
-        return ResponseEntity.ok(historialMedicoService.actualizar(id, datosActualizados, usuarioId));
+        HistorialMedico actualizado = historialMedicoService.actualizar(id, request, usuarioId);
+        return ResponseEntity.ok(new HistorialMedicoResponseDTO(actualizado));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🗑️ Eliminando historial ID: " + id);
         historialMedicoService.eliminar(id, usuarioId);
         return ResponseEntity.noContent().build();
     }

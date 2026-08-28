@@ -1,5 +1,6 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.HistorialMedicoRequestDTO;
 import com.petapp.backend.model.HistorialMedico;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.repository.HistorialMedicoRepository;
@@ -27,7 +28,7 @@ public class HistorialMedicoServiceImpl implements HistorialMedicoService {
 
     @Override
     @Transactional
-    public HistorialMedico crear(HistorialMedico historialMedico, Long mascotaId, Long propietarioId) {
+    public HistorialMedico crear(HistorialMedicoRequestDTO request, Long mascotaId, Long propietarioId) {
         Mascota mascota = mascotaRepository.findById(mascotaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe una mascota con id " + mascotaId));
@@ -36,10 +37,15 @@ public class HistorialMedicoServiceImpl implements HistorialMedicoService {
             throw new RuntimeException("La mascota no pertenece al usuario autenticado");
         }
 
-        historialMedico.setMascota(mascota);
-        HistorialMedico guardado = historialMedicoRepository.save(historialMedico);
-        System.out.println("✅ Historial médico guardado para mascota: " + guardado.getMascota().getNombre());
-        return guardado;
+        HistorialMedico historial = new HistorialMedico();
+        historial.setFecha(request.getFecha());
+        historial.setMotivoConsulta(request.getMotivoConsulta());
+        historial.setDiagnostico(request.getDiagnostico());
+        historial.setTratamiento(request.getTratamiento());
+        historial.setVeterinario(request.getVeterinario());
+        historial.setClinica(request.getClinica());
+        historial.setMascota(mascota);
+        return historialMedicoRepository.save(historial);
     }
 
     @Override
@@ -58,35 +64,20 @@ public class HistorialMedicoServiceImpl implements HistorialMedicoService {
 
     @Override
     public List<HistorialMedico> listarPorPropietario(Long propietarioId) {
-        List<HistorialMedico> historiales = historialMedicoRepository.findByPropietarioId(propietarioId);
-        System.out.println("📋 Registros de historial médico encontrados: " + historiales.size());
-        return historiales;
+        return historialMedicoRepository.findByPropietarioId(propietarioId);
     }
 
     @Override
     @Transactional
-    public HistorialMedico actualizar(Long id, HistorialMedico datosActualizados, Long propietarioId) {
+    public HistorialMedico actualizar(Long id, HistorialMedicoRequestDTO request, Long propietarioId) {
         HistorialMedico existente = obtenerPorIdYPropietario(id, propietarioId);
 
-        existente.setFecha(datosActualizados.getFecha());
-        existente.setMotivoConsulta(datosActualizados.getMotivoConsulta());
-        existente.setDiagnostico(datosActualizados.getDiagnostico());
-        existente.setTratamiento(datosActualizados.getTratamiento());
-        existente.setVeterinario(datosActualizados.getVeterinario());
-        existente.setClinica(datosActualizados.getClinica());
-
-        if (datosActualizados.getMascota() != null && datosActualizados.getMascota().getId() != null) {
-            Long nuevaMascotaId = datosActualizados.getMascota().getId();
-            Mascota mascota = mascotaRepository.findById(nuevaMascotaId)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "No existe una mascota con id " + nuevaMascotaId));
-
-            if (!mascota.getPropietario().getId().equals(propietarioId)) {
-                throw new RuntimeException("La mascota no pertenece al usuario autenticado");
-            }
-            existente.setMascota(mascota);
-        }
-
+        existente.setFecha(request.getFecha());
+        existente.setMotivoConsulta(request.getMotivoConsulta());
+        existente.setDiagnostico(request.getDiagnostico());
+        existente.setTratamiento(request.getTratamiento());
+        existente.setVeterinario(request.getVeterinario());
+        existente.setClinica(request.getClinica());
         return historialMedicoRepository.save(existente);
     }
 
