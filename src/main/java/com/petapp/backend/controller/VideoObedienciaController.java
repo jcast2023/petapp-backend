@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.VideoObedienciaRequestDTO;
+import com.petapp.backend.dto.VideoObedienciaResponseDTO;
 import com.petapp.backend.model.VideoObediencia;
 import com.petapp.backend.service.VideoObedienciaService;
 import jakarta.validation.Valid;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/videos-obediencia")
@@ -22,24 +25,33 @@ public class VideoObedienciaController {
     }
 
     @PostMapping
-    public ResponseEntity<VideoObediencia> crear(@Valid @RequestBody VideoObediencia video) {
-        VideoObediencia creado = videoObedienciaService.crear(video);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    public ResponseEntity<VideoObedienciaResponseDTO> crear(@Valid @RequestBody VideoObedienciaRequestDTO request) {
+        VideoObediencia creado = videoObedienciaService.crear(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new VideoObedienciaResponseDTO(creado));
     }
 
     @GetMapping
-    public ResponseEntity<List<VideoObediencia>> listarTodos() {
-        return ResponseEntity.ok(videoObedienciaService.listarTodos());
+    public ResponseEntity<List<VideoObedienciaResponseDTO>> listarTodos() {
+        List<VideoObedienciaResponseDTO> lista = videoObedienciaService.listarTodos()
+                .stream()
+                .map(VideoObedienciaResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/nivel/{nivel}")
-    public ResponseEntity<List<VideoObediencia>> listarPorNivel(@PathVariable String nivel) {
-        return ResponseEntity.ok(videoObedienciaService.listarPorNivel(nivel));
+    public ResponseEntity<List<VideoObedienciaResponseDTO>> listarPorNivel(@PathVariable String nivel) {
+        List<VideoObedienciaResponseDTO> lista = videoObedienciaService.listarPorNivel(nivel)
+                .stream()
+                .map(VideoObedienciaResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<VideoObediencia> obtenerPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(videoObedienciaService.obtenerPorId(id));
+    public ResponseEntity<VideoObedienciaResponseDTO> obtenerPorId(@PathVariable Long id) {
+        VideoObediencia video = videoObedienciaService.obtenerPorId(id);
+        return ResponseEntity.ok(new VideoObedienciaResponseDTO(video));
     }
 
     @DeleteMapping("/{id}")

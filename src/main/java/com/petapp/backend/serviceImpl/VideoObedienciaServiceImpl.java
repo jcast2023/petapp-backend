@@ -1,5 +1,6 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.VideoObedienciaRequestDTO;
 import com.petapp.backend.model.VideoObediencia;
 import com.petapp.backend.repository.VideoObedienciaRepository;
 import com.petapp.backend.service.RecursoNoEncontradoException;
@@ -20,7 +21,15 @@ public class VideoObedienciaServiceImpl implements VideoObedienciaService {
     }
 
     @Override
-    public VideoObediencia crear(VideoObediencia video) {
+    public VideoObediencia crear(VideoObedienciaRequestDTO request) {
+        VideoObediencia video = new VideoObediencia();
+        video.setTitulo(request.getTitulo());
+        video.setDescripcion(request.getDescripcion());
+        video.setUrlVideo(request.getUrlVideo());
+        video.setComando(request.getComando());
+        video.setNivel(request.getNivel());
+        video.setDuracionSegundos(request.getDuracionSegundos());
+        video.setMiniaturaUrl(request.getMiniaturaUrl());
         return videoObedienciaRepository.save(video);
     }
 
