@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.MascotaRequestDTO;
+import com.petapp.backend.dto.MascotaResponseDTO;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.service.MascotaService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mascotas")
@@ -23,42 +26,43 @@ public class MascotaController {
     }
 
     @PostMapping
-    public ResponseEntity<Mascota> crear(@Valid @RequestBody Mascota mascota) {
-        // Obtener el usuario autenticado del SecurityContext
+    public ResponseEntity<MascotaResponseDTO> crear(@Valid @RequestBody MascotaRequestDTO request) {
         Long usuarioId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getCredentials();
-
-        Mascota creada = mascotaService.crear(mascota, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creada);
+        Mascota creada = mascotaService.crear(request, usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new MascotaResponseDTO(creada));
     }
 
     @GetMapping
-    public ResponseEntity<List<Mascota>> listar() {
+    public ResponseEntity<List<MascotaResponseDTO>> listar() {
         Long usuarioId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getCredentials();
-
-        return ResponseEntity.ok(mascotaService.listarPorPropietario(usuarioId));
+        List<MascotaResponseDTO> mascotas = mascotaService.listarPorPropietario(usuarioId)
+                .stream()
+                .map(MascotaResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(mascotas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Mascota> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<MascotaResponseDTO> obtenerPorId(@PathVariable Long id) {
         Long usuarioId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getCredentials();
-
-        return ResponseEntity.ok(mascotaService.obtenerPorIdYPropietario(id, usuarioId));
+        Mascota mascota = mascotaService.obtenerPorIdYPropietario(id, usuarioId);
+        return ResponseEntity.ok(new MascotaResponseDTO(mascota));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Mascota> actualizar(@PathVariable Long id,
-                                              @Valid @RequestBody Mascota datosActualizados) {
+    public ResponseEntity<MascotaResponseDTO> actualizar(@PathVariable Long id,
+                                                         @Valid @RequestBody MascotaRequestDTO request) {
         Long usuarioId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getCredentials();
-
-        return ResponseEntity.ok(mascotaService.actualizar(id, datosActualizados, usuarioId));
+        Mascota actualizada = mascotaService.actualizar(id, request, usuarioId);
+        return ResponseEntity.ok(new MascotaResponseDTO(actualizada));
     }
 
     @DeleteMapping("/{id}")
@@ -66,7 +70,6 @@ public class MascotaController {
         Long usuarioId = (Long) SecurityContextHolder.getContext()
                 .getAuthentication()
                 .getCredentials();
-
         mascotaService.eliminar(id, usuarioId);
         return ResponseEntity.noContent().build();
     }

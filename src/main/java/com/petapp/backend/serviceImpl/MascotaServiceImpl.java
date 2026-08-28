@@ -1,13 +1,15 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.MascotaRequestDTO;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.model.Usuario;
 import com.petapp.backend.repository.MascotaRepository;
-import com.petapp.backend.repository.UsuarioRepository;
 import com.petapp.backend.service.MascotaService;
-import com.petapp.backend.service.RecursoNoEncontradoException;
+import com.petapp.backend.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -15,35 +17,41 @@ import java.util.List;
 public class MascotaServiceImpl implements MascotaService {
 
     private final MascotaRepository mascotaRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
 
     @Autowired
-    public MascotaServiceImpl(MascotaRepository mascotaRepository, UsuarioRepository usuarioRepository) {
+    public MascotaServiceImpl(MascotaRepository mascotaRepository, UsuarioService usuarioService) {
         this.mascotaRepository = mascotaRepository;
-        this.usuarioRepository = usuarioRepository;
+        this.usuarioService = usuarioService;
     }
 
     @Override
-    public Mascota crear(Mascota mascota, Long propietarioId) {
-        Usuario propietario = usuarioRepository.findById(propietarioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe un usuario con id " + propietarioId));
-        mascota.setPropietario(propietario);
+    public Mascota crear(MascotaRequestDTO request, Long usuarioId) {
+        Usuario usuario = usuarioService.obtenerPorId(usuarioId);
+        Mascota mascota = new Mascota();
+        mascota.setNombre(request.getNombre());
+        mascota.setEspecie(request.getEspecie());
+        mascota.setRaza(request.getRaza());
+        mascota.setSexo(request.getSexo());
+        mascota.setFechaNacimiento(request.getFechaNacimiento());
+        mascota.setFotoUrl(request.getFotoUrl());
+        mascota.setPropietario(usuario);
         return mascotaRepository.save(mascota);
     }
 
     @Override
     public Mascota obtenerPorId(Long id) {
         return mascotaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una mascota con id " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mascota no encontrada"));
     }
 
     @Override
     public Mascota obtenerPorIdYPropietario(Long id, Long propietarioId) {
-        return mascotaRepository.findByIdAndPropietarioId(id, propietarioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una mascota con id " + id + " para este usuario"));
+        Mascota mascota = obtenerPorId(id);
+        if (!mascota.getPropietario().getId().equals(propietarioId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para esta mascota");
+        }
+        return mascota;
     }
 
     @Override
@@ -52,23 +60,20 @@ public class MascotaServiceImpl implements MascotaService {
     }
 
     @Override
-    public Mascota actualizar(Long id, Mascota datosActualizados, Long propietarioId) {
-        // Verificar que la mascota pertenece al usuario
-        Mascota existente = obtenerPorIdYPropietario(id, propietarioId);
-
-        existente.setNombre(datosActualizados.getNombre());
-        existente.setEspecie(datosActualizados.getEspecie());
-        existente.setRaza(datosActualizados.getRaza());
-        existente.setFechaNacimiento(datosActualizados.getFechaNacimiento());
-        existente.setSexo(datosActualizados.getSexo());
-        existente.setFotoUrl(datosActualizados.getFotoUrl());
-        return mascotaRepository.save(existente);
+    public Mascota actualizar(Long id, MascotaRequestDTO request, Long usuarioId) {
+        Mascota mascota = obtenerPorIdYPropietario(id, usuarioId);
+        mascota.setNombre(request.getNombre());
+        mascota.setEspecie(request.getEspecie());
+        mascota.setRaza(request.getRaza());
+        mascota.setSexo(request.getSexo());
+        mascota.setFechaNacimiento(request.getFechaNacimiento());
+        mascota.setFotoUrl(request.getFotoUrl());
+        return mascotaRepository.save(mascota);
     }
 
     @Override
     public void eliminar(Long id, Long propietarioId) {
-        // Verificar que la mascota pertenece al usuario
-        Mascota existente = obtenerPorIdYPropietario(id, propietarioId);
-        mascotaRepository.delete(existente);
+        Mascota mascota = obtenerPorIdYPropietario(id, propietarioId);
+        mascotaRepository.delete(mascota);
     }
 }

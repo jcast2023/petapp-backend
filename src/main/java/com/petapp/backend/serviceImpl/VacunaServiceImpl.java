@@ -1,13 +1,15 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.VacunaRequestDTO;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.model.Vacuna;
 import com.petapp.backend.repository.MascotaRepository;
 import com.petapp.backend.repository.VacunaRepository;
-import com.petapp.backend.service.RecursoNoEncontradoException;
 import com.petapp.backend.service.VacunaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,15 +26,21 @@ public class VacunaServiceImpl implements VacunaService {
     }
 
     @Override
-    public Vacuna crear(Vacuna vacuna, Long mascotaId, Long propietarioId) {
+    public Vacuna crear(VacunaRequestDTO request, Long mascotaId, Long propietarioId) {
         Mascota mascota = mascotaRepository.findById(mascotaId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una mascota con id " + mascotaId));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Mascota no encontrada"));
 
+        // Check: El propietario debe ser el dueño de la mascota
         if (!mascota.getPropietario().getId().equals(propietarioId)) {
-            throw new RuntimeException("La mascota no pertenece al usuario autenticado");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "No tienes permiso para esta mascota");
         }
 
+        Vacuna vacuna = new Vacuna();
+        vacuna.setNombreVacuna(request.getNombreVacuna());
+        vacuna.setFechaAplicacion(request.getFechaAplicacion());
+        vacuna.setFechaProximaDosis(request.getFechaProximaDosis());
+        vacuna.setVeterinario(request.getVeterinario());
+        vacuna.setNotas(request.getNotas());
         vacuna.setMascota(mascota);
         return vacunaRepository.save(vacuna);
     }
@@ -40,15 +48,13 @@ public class VacunaServiceImpl implements VacunaService {
     @Override
     public Vacuna obtenerPorId(Long id) {
         return vacunaRepository.findById(id)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una vacuna con id " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vacuna no encontrada"));
     }
 
     @Override
     public Vacuna obtenerPorIdYPropietario(Long id, Long propietarioId) {
         return vacunaRepository.findByIdAndPropietarioId(id, propietarioId)
-                .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "No existe una vacuna con id " + id + " para este usuario"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vacuna no encontrada"));
     }
 
     @Override
@@ -57,33 +63,19 @@ public class VacunaServiceImpl implements VacunaService {
     }
 
     @Override
-    public Vacuna actualizar(Long id, Vacuna datosActualizados, Long propietarioId) {
-        Vacuna existente = obtenerPorIdYPropietario(id, propietarioId);
-
-        existente.setNombreVacuna(datosActualizados.getNombreVacuna());
-        existente.setFechaAplicacion(datosActualizados.getFechaAplicacion());
-        existente.setFechaProximaDosis(datosActualizados.getFechaProximaDosis());
-        existente.setVeterinario(datosActualizados.getVeterinario());
-        existente.setNotas(datosActualizados.getNotas());
-
-        if (datosActualizados.getMascota() != null && datosActualizados.getMascota().getId() != null) {
-            Long nuevaMascotaId = datosActualizados.getMascota().getId();
-            Mascota mascota = mascotaRepository.findById(nuevaMascotaId)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "No existe una mascota con id " + nuevaMascotaId));
-
-            if (!mascota.getPropietario().getId().equals(propietarioId)) {
-                throw new RuntimeException("La mascota no pertenece al usuario autenticado");
-            }
-            existente.setMascota(mascota);
-        }
-
-        return vacunaRepository.save(existente);
+    public Vacuna actualizar(Long id, VacunaRequestDTO request, Long propietarioId) {
+        Vacuna vacuna = obtenerPorIdYPropietario(id, propietarioId);
+        vacuna.setNombreVacuna(request.getNombreVacuna());
+        vacuna.setFechaAplicacion(request.getFechaAplicacion());
+        vacuna.setFechaProximaDosis(request.getFechaProximaDosis());
+        vacuna.setVeterinario(request.getVeterinario());
+        vacuna.setNotas(request.getNotas());
+        return vacunaRepository.save(vacuna);
     }
 
     @Override
     public void eliminar(Long id, Long propietarioId) {
-        Vacuna existente = obtenerPorIdYPropietario(id, propietarioId);
-        vacunaRepository.delete(existente);
+        Vacuna vacuna = obtenerPorIdYPropietario(id, propietarioId);
+        vacunaRepository.delete(vacuna);
     }
 }

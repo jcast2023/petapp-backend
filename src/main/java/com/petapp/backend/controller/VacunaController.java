@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.VacunaRequestDTO;
+import com.petapp.backend.dto.VacunaResponseDTO;
 import com.petapp.backend.model.Vacuna;
 import com.petapp.backend.service.VacunaService;
 import jakarta.validation.Valid;
@@ -10,7 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/vacunas")
@@ -23,101 +25,53 @@ public class VacunaController {
         this.vacunaService = vacunaService;
     }
 
-    private Long obtenerUsuarioId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new RuntimeException("Usuario no autenticado");
-        }
-        Object credentials = authentication.getCredentials();
-        if (credentials instanceof Long) {
-            return (Long) credentials;
-        }
-        throw new RuntimeException("No se pudo obtener el ID del usuario");
-    }
-
     @PostMapping
-    public ResponseEntity<Vacuna> crear(@Valid @RequestBody Map<String, Object> payload) {
-        Long usuarioId = obtenerUsuarioId();
-        System.out.println("🆕 Creando vacuna para usuario: " + usuarioId);
-        System.out.println("📦 Payload recibido: " + payload);
-
-        // Extraer campos del payload
-        String nombreVacuna = (String) payload.get("nombreVacuna");
-        String fechaAplicacion = (String) payload.get("fechaAplicacion");
-        String fechaProximaDosis = (String) payload.get("fechaProximaDosis");
-        String veterinario = (String) payload.get("veterinario");
-        String notas = (String) payload.get("notas");
-        Long mascotaId = payload.get("mascotaId") != null ?
-                Long.valueOf(payload.get("mascotaId").toString()) : null;
-
-        System.out.println("🐾 Mascota ID: " + mascotaId);
-        System.out.println("💉 Vacuna: " + nombreVacuna);
-
-        if (mascotaId == null) {
-            throw new RuntimeException("mascotaId es requerido");
-        }
-
-        // Crear objeto Vacuna
-        Vacuna vacuna = new Vacuna();
-        vacuna.setNombreVacuna(nombreVacuna);
-        vacuna.setFechaAplicacion(java.time.LocalDate.parse(fechaAplicacion));
-        vacuna.setFechaProximaDosis(java.time.LocalDate.parse(fechaProximaDosis));
-        vacuna.setVeterinario(veterinario);
-        vacuna.setNotas(notas);
-
-        Vacuna creado = vacunaService.crear(vacuna, mascotaId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creado);
+    public ResponseEntity<VacunaResponseDTO> crear(@Valid @RequestBody VacunaRequestDTO request,
+                                                   @RequestParam Long mascotaId) {
+        Long propietarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+        Vacuna creada = vacunaService.crear(request, mascotaId, propietarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new VacunaResponseDTO(creada));
     }
 
     @GetMapping
-    public ResponseEntity<List<Vacuna>> listar() {
-        Long usuarioId = obtenerUsuarioId();
-        System.out.println("📋 Listando vacunas para usuario: " + usuarioId);
-        return ResponseEntity.ok(vacunaService.listarPorPropietario(usuarioId));
+    public ResponseEntity<List<VacunaResponseDTO>> listar() {
+        Long propietarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+        List<VacunaResponseDTO> vacunas = vacunaService.listarPorPropietario(propietarioId)
+                .stream()
+                .map(VacunaResponseDTO::new)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(vacunas);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Vacuna> obtenerPorId(@PathVariable Long id) {
-        Long usuarioId = obtenerUsuarioId();
-        return ResponseEntity.ok(vacunaService.obtenerPorIdYPropietario(id, usuarioId));
+    public ResponseEntity<VacunaResponseDTO> obtenerPorId(@PathVariable Long id) {
+        Long propietarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+        Vacuna vacuna = vacunaService.obtenerPorIdYPropietario(id, propietarioId);
+        return ResponseEntity.ok(new VacunaResponseDTO(vacuna));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Vacuna> actualizar(@PathVariable Long id,
-                                             @Valid @RequestBody Map<String, Object> payload) {
-        Long usuarioId = obtenerUsuarioId();
-        System.out.println("✏️ Actualizando vacuna ID: " + id);
-
-        // Extraer campos del payload
-        String nombreVacuna = (String) payload.get("nombreVacuna");
-        String fechaAplicacion = (String) payload.get("fechaAplicacion");
-        String fechaProximaDosis = (String) payload.get("fechaProximaDosis");
-        String veterinario = (String) payload.get("veterinario");
-        String notas = (String) payload.get("notas");
-        Long mascotaId = payload.get("mascotaId") != null ?
-                Long.valueOf(payload.get("mascotaId").toString()) : null;
-
-        // Crear objeto Vacuna
-        Vacuna vacuna = new Vacuna();
-        vacuna.setNombreVacuna(nombreVacuna);
-        vacuna.setFechaAplicacion(java.time.LocalDate.parse(fechaAplicacion));
-        vacuna.setFechaProximaDosis(java.time.LocalDate.parse(fechaProximaDosis));
-        vacuna.setVeterinario(veterinario);
-        vacuna.setNotas(notas);
-
-        if (mascotaId != null) {
-            com.petapp.backend.model.Mascota mascota = new com.petapp.backend.model.Mascota();
-            mascota.setId(mascotaId);
-            vacuna.setMascota(mascota);
-        }
-
-        return ResponseEntity.ok(vacunaService.actualizar(id, vacuna, usuarioId));
+    public ResponseEntity<VacunaResponseDTO> actualizar(@PathVariable Long id,
+                                                        @Valid @RequestBody VacunaRequestDTO request) {
+        Long propietarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+        Vacuna actualizada = vacunaService.actualizar(id, request, propietarioId);
+        return ResponseEntity.ok(new VacunaResponseDTO(actualizada));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
-        Long usuarioId = obtenerUsuarioId();
-        vacunaService.eliminar(id, usuarioId);
+        Long propietarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+        vacunaService.eliminar(id, propietarioId);
         return ResponseEntity.noContent().build();
     }
 }
