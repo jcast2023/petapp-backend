@@ -1,5 +1,6 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.BanoRequestDTO;
 import com.petapp.backend.model.Bano;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.repository.BanoRepository;
@@ -24,7 +25,7 @@ public class BanoServiceImpl implements BanoService {
     }
 
     @Override
-    public Bano crear(Bano bano, Long mascotaId, Long propietarioId) {
+    public Bano crear(BanoRequestDTO request, Long mascotaId, Long propietarioId) {
         Mascota mascota = mascotaRepository.findById(mascotaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe una mascota con id " + mascotaId));
@@ -33,6 +34,9 @@ public class BanoServiceImpl implements BanoService {
             throw new RuntimeException("La mascota no pertenece al usuario autenticado");
         }
 
+        Bano bano = new Bano();
+        bano.setFecha(request.getFecha());
+        bano.setNotas(request.getNotas());
         bano.setMascota(mascota);
         return banoRepository.save(bano);
     }
@@ -57,24 +61,11 @@ public class BanoServiceImpl implements BanoService {
     }
 
     @Override
-    public Bano actualizar(Long id, Bano datosActualizados, Long propietarioId) {
+    public Bano actualizar(Long id, BanoRequestDTO request, Long propietarioId) {
         Bano existente = obtenerPorIdYPropietario(id, propietarioId);
 
-        existente.setFecha(datosActualizados.getFecha());
-        existente.setNotas(datosActualizados.getNotas());
-
-        if (datosActualizados.getMascota() != null && datosActualizados.getMascota().getId() != null) {
-            Long nuevaMascotaId = datosActualizados.getMascota().getId();
-            Mascota mascota = mascotaRepository.findById(nuevaMascotaId)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "No existe una mascota con id " + nuevaMascotaId));
-
-            if (!mascota.getPropietario().getId().equals(propietarioId)) {
-                throw new RuntimeException("La mascota no pertenece al usuario autenticado");
-            }
-            existente.setMascota(mascota);
-        }
-
+        existente.setFecha(request.getFecha());
+        existente.setNotas(request.getNotas());
         return banoRepository.save(existente);
     }
 
