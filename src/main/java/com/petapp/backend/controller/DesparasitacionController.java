@@ -1,5 +1,7 @@
 package com.petapp.backend.controller;
 
+import com.petapp.backend.dto.DesparasitacionRequestDTO;
+import com.petapp.backend.dto.DesparasitacionResponseDTO;
 import com.petapp.backend.model.Desparasitacion;
 import com.petapp.backend.service.DesparasitacionService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/desparasitaciones")
@@ -35,47 +38,41 @@ public class DesparasitacionController {
     }
 
     @PostMapping
-    public ResponseEntity<Desparasitacion> crear(@Valid @RequestBody Desparasitacion desparasitacion) {
+    public ResponseEntity<DesparasitacionResponseDTO> crear(@Valid @RequestBody DesparasitacionRequestDTO request,
+                                                            @RequestParam Long mascotaId) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🆕 Creando desparasitación para usuario: " + usuarioId);
-
-        Long mascotaId = desparasitacion.getMascota().getId();
-        System.out.println("🐾 Mascota ID: " + mascotaId);
-        System.out.println("💊 Producto: " + desparasitacion.getProducto());
-        System.out.println("📋 Tipo: " + desparasitacion.getTipo());
-
-        Desparasitacion creada = desparasitacionService.crear(desparasitacion, mascotaId, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(creada);
+        Desparasitacion creada = desparasitacionService.crear(request, mascotaId, usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(new DesparasitacionResponseDTO(creada));
     }
 
     @GetMapping
-    public ResponseEntity<List<Desparasitacion>> listar() {
+    public ResponseEntity<List<DesparasitacionResponseDTO>> listar() {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("📋 Listando desparasitaciones para usuario: " + usuarioId);
-        List<Desparasitacion> lista = desparasitacionService.listarPorPropietario(usuarioId);
-        System.out.println("📊 Desparasitaciones encontradas: " + lista.size());
+        List<DesparasitacionResponseDTO> lista = desparasitacionService.listarPorPropietario(usuarioId)
+                .stream()
+                .map(DesparasitacionResponseDTO::new)
+                .collect(Collectors.toList());
         return ResponseEntity.ok(lista);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Desparasitacion> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<DesparasitacionResponseDTO> obtenerPorId(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🔍 Obteniendo desparasitación ID: " + id);
-        return ResponseEntity.ok(desparasitacionService.obtenerPorIdYPropietario(id, usuarioId));
+        Desparasitacion desparasitacion = desparasitacionService.obtenerPorIdYPropietario(id, usuarioId);
+        return ResponseEntity.ok(new DesparasitacionResponseDTO(desparasitacion));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Desparasitacion> actualizar(@PathVariable Long id,
-                                                      @Valid @RequestBody Desparasitacion datosActualizados) {
+    public ResponseEntity<DesparasitacionResponseDTO> actualizar(@PathVariable Long id,
+                                                                 @Valid @RequestBody DesparasitacionRequestDTO request) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("✏️ Actualizando desparasitación ID: " + id);
-        return ResponseEntity.ok(desparasitacionService.actualizar(id, datosActualizados, usuarioId));
+        Desparasitacion actualizada = desparasitacionService.actualizar(id, request, usuarioId);
+        return ResponseEntity.ok(new DesparasitacionResponseDTO(actualizada));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         Long usuarioId = obtenerUsuarioId();
-        System.out.println("🗑️ Eliminando desparasitación ID: " + id);
         desparasitacionService.eliminar(id, usuarioId);
         return ResponseEntity.noContent().build();
     }

@@ -1,5 +1,6 @@
 package com.petapp.backend.serviceImpl;
 
+import com.petapp.backend.dto.DesparasitacionRequestDTO;
 import com.petapp.backend.model.Desparasitacion;
 import com.petapp.backend.model.Mascota;
 import com.petapp.backend.repository.DesparasitacionRepository;
@@ -27,7 +28,7 @@ public class DesparasitacionServiceImpl implements DesparasitacionService {
 
     @Override
     @Transactional
-    public Desparasitacion crear(Desparasitacion desparasitacion, Long mascotaId, Long propietarioId) {
+    public Desparasitacion crear(DesparasitacionRequestDTO request, Long mascotaId, Long propietarioId) {
         Mascota mascota = mascotaRepository.findById(mascotaId)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "No existe una mascota con id " + mascotaId));
@@ -36,10 +37,14 @@ public class DesparasitacionServiceImpl implements DesparasitacionService {
             throw new RuntimeException("La mascota no pertenece al usuario autenticado");
         }
 
+        Desparasitacion desparasitacion = new Desparasitacion();
+        desparasitacion.setTipo(request.getTipo());
+        desparasitacion.setProducto(request.getProducto());
+        desparasitacion.setFechaAplicacion(request.getFechaAplicacion());
+        desparasitacion.setFechaProximaDosis(request.getFechaProximaDosis());
+        desparasitacion.setNotas(request.getNotas());
         desparasitacion.setMascota(mascota);
-        Desparasitacion guardada = desparasitacionRepository.save(desparasitacion);
-        System.out.println("✅ Desparasitación guardada: " + guardada.getProducto() + " - Mascota: " + guardada.getMascota().getNombre());
-        return guardada;
+        return desparasitacionRepository.save(desparasitacion);
     }
 
     @Override
@@ -58,38 +63,19 @@ public class DesparasitacionServiceImpl implements DesparasitacionService {
 
     @Override
     public List<Desparasitacion> listarPorPropietario(Long propietarioId) {
-        List<Desparasitacion> desparasitaciones = desparasitacionRepository.findByPropietarioId(propietarioId);
-        System.out.println("📋 Desparasitaciones encontradas: " + desparasitaciones.size());
-        for (Desparasitacion d : desparasitaciones) {
-            System.out.println("  - " + d.getProducto() + " | Mascota: " +
-                    (d.getMascota() != null ? d.getMascota().getNombre() : "null"));
-        }
-        return desparasitaciones;
+        return desparasitacionRepository.findByPropietarioId(propietarioId);
     }
 
     @Override
     @Transactional
-    public Desparasitacion actualizar(Long id, Desparasitacion datosActualizados, Long propietarioId) {
+    public Desparasitacion actualizar(Long id, DesparasitacionRequestDTO request, Long propietarioId) {
         Desparasitacion existente = obtenerPorIdYPropietario(id, propietarioId);
 
-        existente.setTipo(datosActualizados.getTipo());
-        existente.setProducto(datosActualizados.getProducto());
-        existente.setFechaAplicacion(datosActualizados.getFechaAplicacion());
-        existente.setFechaProximaDosis(datosActualizados.getFechaProximaDosis());
-        existente.setNotas(datosActualizados.getNotas());
-
-        if (datosActualizados.getMascota() != null && datosActualizados.getMascota().getId() != null) {
-            Long nuevaMascotaId = datosActualizados.getMascota().getId();
-            Mascota mascota = mascotaRepository.findById(nuevaMascotaId)
-                    .orElseThrow(() -> new RecursoNoEncontradoException(
-                            "No existe una mascota con id " + nuevaMascotaId));
-
-            if (!mascota.getPropietario().getId().equals(propietarioId)) {
-                throw new RuntimeException("La mascota no pertenece al usuario autenticado");
-            }
-            existente.setMascota(mascota);
-        }
-
+        existente.setTipo(request.getTipo());
+        existente.setProducto(request.getProducto());
+        existente.setFechaAplicacion(request.getFechaAplicacion());
+        existente.setFechaProximaDosis(request.getFechaProximaDosis());
+        existente.setNotas(request.getNotas());
         return desparasitacionRepository.save(existente);
     }
 
