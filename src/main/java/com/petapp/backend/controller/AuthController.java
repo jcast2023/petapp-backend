@@ -62,11 +62,11 @@ public class AuthController {
 
         String token = establecerCookieJwt(usuario.getId(), usuario.getCorreo(), response);
 
-        // Respuesta con token en el body para Flutter
         Map<String, Object> body = new HashMap<>();
         body.put("usuarioId", usuario.getId());
         body.put("nombre", usuario.getNombre());
         body.put("correo", usuario.getCorreo());
+        body.put("rol", usuario.getRol()); // <-- Envía ROLE_ADMIN para Julio y ROLE_USER para el resto
         body.put("token", token);
 
         return ResponseEntity.ok(body);
