@@ -36,6 +36,9 @@ public class Usuario {
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaRegistro = LocalDateTime.now();
 
+    @Column(nullable = false)
+    private String rol = "ROLE_USER"; // Valor por defecto
+
     // Una mascota siempre pertenece a un usuario; si borras el usuario, se
     // borran sus mascotas en cascada (evita registros huérfanos en la BD)
     @OneToMany(mappedBy = "propietario", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -88,5 +91,13 @@ public class Usuario {
 
     public void setMascotas(List<Mascota> mascotas) {
         this.mascotas = mascotas;
+    }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
     }
 }

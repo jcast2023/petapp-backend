@@ -17,6 +17,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 import java.util.Arrays;
 
@@ -39,6 +40,13 @@ public class SecurityConfig {
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/registro", "/api/auth/login", "/ws/**", "/health").permitAll()
+
+                        // RESTRICCIONES PARA VIDEOS
+                        .requestMatchers(HttpMethod.GET, "/api/videos/**").authenticated() // Cualquier usuario autenticado puede ver
+                        .requestMatchers(HttpMethod.POST, "/api/videos/**").hasRole("ADMIN") // Solo ADMIN crea
+                        .requestMatchers(HttpMethod.PUT, "/api/videos/**").hasRole("ADMIN")  // Solo ADMIN edita
+                        .requestMatchers(HttpMethod.DELETE, "/api/videos/**").hasRole("ADMIN") // Solo ADMIN elimina
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

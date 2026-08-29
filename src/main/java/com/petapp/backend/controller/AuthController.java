@@ -76,7 +76,12 @@ public class AuthController {
     public ResponseEntity<AuthResponse> obtenerUsuarioActual(@RequestAttribute("usuarioId") Long usuarioId,
                                                              @RequestAttribute("correo") String correo) {
         Usuario usuario = usuarioService.obtenerPorId(usuarioId);
-        return ResponseEntity.ok(new AuthResponse(usuario.getId(), usuario.getNombre(), usuario.getCorreo()));
+        return ResponseEntity.ok(new AuthResponse(
+                usuario.getId(),
+                usuario.getNombre(),
+                usuario.getCorreo(),
+                usuario.getRol() // <-- Agrega este argumento
+        ));
     }
 
     @PostMapping("/logout")
