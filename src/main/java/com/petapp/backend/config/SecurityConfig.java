@@ -39,15 +39,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Rutas públicas agregadas: recuperar-password y reset-password
-                        .requestMatchers(
-                                "/api/auth/registro",
-                                "/api/auth/login",
-                                "/api/auth/recuperar-password",
-                                "/api/auth/reset-password",
-                                "/ws/**",
-                                "/health"
-                        ).permitAll()
+                        // Permite TODAS las rutas públicas dentro de /api/auth/
+                        .requestMatchers("/api/auth/**", "/ws/**", "/health").permitAll()
 
                         // RESTRICCIONES PARA VIDEOS
                         .requestMatchers(HttpMethod.GET, "/api/videos/**").authenticated()
