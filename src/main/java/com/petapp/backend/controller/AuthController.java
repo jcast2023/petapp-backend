@@ -111,4 +111,31 @@ public class AuthController {
         response.addHeader("Set-Cookie", cookie.toString());
         return token; // Devuelve el token para usarlo en el body
     }
+
+    // AuthController.java
+
+    @PostMapping("/recuperar-password")
+    public ResponseEntity<Map<String, String>> recuperarPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+
+        // TODO: Invocar a tu servicio para generar token y enviar correo
+        // usuarioService.solicitarRecuperacionPassword(email);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("mensaje", "Hemos enviado un enlace de recuperación a tu correo electrónico.");
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, String>> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        String nuevaPassword = request.get("nuevaPassword");
+
+        // TODO: Invocar a tu servicio para actualizar la contraseña con el token
+        // usuarioService.restablecerContrasena(token, nuevaPassword);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("mensaje", "¡Tu contraseña ha sido actualizada con éxito!");
+        return ResponseEntity.ok(response);
+    }
 }
