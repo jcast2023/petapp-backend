@@ -39,7 +39,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Permite TODAS las rutas públicas dentro de /api/auth/
+                        // 1. PERMITIR PREFLIGHT (OPTIONS) PARA TODAS LAS RUTAS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // 2. RUTAS PÚBLICAS
                         .requestMatchers("/api/auth/**", "/ws/**", "/health").permitAll()
 
                         // RESTRICCIONES PARA VIDEOS
