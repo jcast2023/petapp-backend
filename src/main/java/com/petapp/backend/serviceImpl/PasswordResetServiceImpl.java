@@ -25,8 +25,17 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    @Transactional
+    // SIN @Transactional aquí: permite liberar la conexión a la base de datos de inmediato
     public void solicitarRecuperacion(String email) {
+        // 1. Ejecuta la consulta y guardado en DB (Abre y CIERRA la conexión al instante)
+        String token = crearYGuardarToken(email);
+
+        // 2. Invoca el correo de forma asíncrona FUERA de la transacción de base de datos
+        emailService.enviarCorreoRecuperacion(email, token);
+    }
+
+    @Transactional // Transactional aislado sólo para el trabajo con MySQL
+    public String crearYGuardarToken(String email) {
         Usuario usuario = usuarioRepository.findByCorreo(email)
                 .orElseThrow(() -> new RuntimeException("No se encontró ningún usuario asociado a este correo"));
 
@@ -42,7 +51,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                 .build();
 
         tokenRepository.save(resetToken);
-        emailService.enviarCorreoRecuperacion(usuario.getCorreo(), token);
+        return token;
     }
 
     @Override

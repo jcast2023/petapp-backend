@@ -4,6 +4,7 @@ import com.petapp.backend.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,6 +14,7 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
 
     @Override
+    @Async
     public void enviarCorreoRecuperacion(String emailDestino, String token) {
         String urlReset = "https://petapp-frontend-k0fr.onrender.com/#/reset-password?token=" + token;
 
