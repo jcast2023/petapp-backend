@@ -39,13 +39,21 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sesion -> sesion.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/registro", "/api/auth/login", "/ws/**", "/health").permitAll()
+                        // Rutas públicas agregadas: recuperar-password y reset-password
+                        .requestMatchers(
+                                "/api/auth/registro",
+                                "/api/auth/login",
+                                "/api/auth/recuperar-password",
+                                "/api/auth/reset-password",
+                                "/ws/**",
+                                "/health"
+                        ).permitAll()
 
                         // RESTRICCIONES PARA VIDEOS
-                        .requestMatchers(HttpMethod.GET, "/api/videos/**").authenticated() // Cualquier usuario autenticado puede ver
-                        .requestMatchers(HttpMethod.POST, "/api/videos/**").hasRole("ADMIN") // Solo ADMIN crea
-                        .requestMatchers(HttpMethod.PUT, "/api/videos/**").hasRole("ADMIN")  // Solo ADMIN edita
-                        .requestMatchers(HttpMethod.DELETE, "/api/videos/**").hasRole("ADMIN") // Solo ADMIN elimina
+                        .requestMatchers(HttpMethod.GET, "/api/videos/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/videos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/videos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/videos/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )
@@ -58,7 +66,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Leer allowed origins desde variable de entorno
         String allowedOrigins = System.getenv().getOrDefault("CORS_ALLOWED_ORIGINS", "http://localhost:4200");
         configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split(",")));
 
@@ -74,10 +81,8 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // Creamos un usuario en memoria (aunque no lo usarás para login real, ya que usas JWT)
-        // Esto "engañará" a Spring Boot para que NO genere la contraseña aleatoria.
         UserDetails user = User.withUsername("admin")
-                .password("{noop}admin") // {noop} significa sin encriptar, solo para desactivar el fallback
+                .password("{noop}admin")
                 .roles("USER")
                 .build();
 
