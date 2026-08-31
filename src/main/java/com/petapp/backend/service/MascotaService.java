@@ -11,4 +11,5 @@ public interface MascotaService {
     List<Mascota> listarPorPropietario(Long propietarioId);
     Mascota actualizar(Long id, MascotaRequestDTO request, Long usuarioId);
     void eliminar(Long id, Long propietarioId);
+    Mascota actualizarFotoUrl(Long id, String fotoUrl, Long propietarioId);
 }

@@ -3,6 +3,7 @@ package com.petapp.backend.controller;
 import com.petapp.backend.dto.MascotaRequestDTO;
 import com.petapp.backend.dto.MascotaResponseDTO;
 import com.petapp.backend.model.Mascota;
+import com.petapp.backend.service.FileStorageService;
 import com.petapp.backend.service.MascotaService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,18 +11,22 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mascotas")
 public class MascotaController {
 
+    private final FileStorageService fileStorageService;
     private final MascotaService mascotaService;
 
     @Autowired
-    public MascotaController(MascotaService mascotaService) {
+    public MascotaController(FileStorageService fileStorageService, MascotaService mascotaService) {
+        this.fileStorageService = fileStorageService;
         this.mascotaService = mascotaService;
     }
 
@@ -72,5 +77,23 @@ public class MascotaController {
                 .getCredentials();
         mascotaService.eliminar(id, usuarioId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/foto")
+    public ResponseEntity<Map<String, String>> uploadFoto(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+
+        Long usuarioId = (Long) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getCredentials();
+
+        String fotoUrl = fileStorageService.saveFile(file);
+        mascotaService.actualizarFotoUrl(id, fotoUrl, usuarioId);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Imagen subida exitosamente",
+                "fotoUrl", fotoUrl
+        ));
     }
 }
