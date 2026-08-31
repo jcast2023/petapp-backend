@@ -8,10 +8,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -29,7 +25,6 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
-    // Inyección por constructor limpia
     public SecurityConfig(JwtAuthFilter jwtAuthFilter) {
         this.jwtAuthFilter = jwtAuthFilter;
     }
@@ -75,7 +70,9 @@ public class SecurityConfig {
         } else {
             configuration.setAllowedOriginPatterns(Arrays.asList(
                     "https://petapp-frontend-k0fr.onrender.com",
-                    "http://localhost:4200"
+                    "http://localhost:4200",
+                    "http://localhost:*",
+                    "http://10.0.2.2:*"
             ));
         }
 
@@ -88,16 +85,6 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails user = User.withUsername("admin")
-                .password("{noop}admin")
-                .roles("ADMIN") // Asignado ROL ADMIN para consistencia en pruebas
-                .build();
-
-        return new InMemoryUserDetailsManager(user);
     }
 
     @Bean
