@@ -27,7 +27,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     // EVITAR QUE EL FILTRO SE EJECUTE EN RUTAS PÚBLICAS Y EN /error
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) throws ServletException {
-        String path = request.getRequestURI();
+        // Usar getServletPath() en lugar de getRequestURI() previene fallos con context-paths
+        String path = request.getServletPath();
         return path.startsWith("/api/auth/") || path.startsWith("/ws/") || path.equals("/health") || path.equals("/error");
     }
 
